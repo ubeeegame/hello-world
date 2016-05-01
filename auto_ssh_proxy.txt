@@ -1,0 +1,39 @@
+SSH的巨大价值体现在能够配置为代理服务器上。
+Linux有很好的工具链(expect+ssh+proxychains)能够实现自动设置SSH代理。
+
+1、安装expect和openssh，如果没有，Ubuntu下输入apt-get install expect openssh-client即可安装。
+vi ssh_proxy.sh：
+-------------------------------------------------
+#!/usr/bin/expect
+set timeout 60
+spawn /usr/bin/ssh -D 本地端口 -g 用户名@服务器
+expect {
+"password:" {
+send "密码\r"
+}
+}
+interact {
+timeout 60 { send " "}
+}
+--------------------------------------------------
+
+保存，给执行权限
+chmod +x sshproxy.sh
+
+运行
+./sshproxy.sh
+登录服务器，在本地建立了一个socks5代理。
+每60秒都要发送一个空格表示还在活动。如果把sshproxy.sh放到自动启动，那么以后每次启动都可以自动建立代理了。
+
+这种方法建立的代理是socks5代理，在浏览器中很容易配置使用.
+在Linux下需要一个名叫proxychains的工具。
+Ubuntu安装
+apt-get install proxychains
+安装完以后要设置/etc/proxychains.conf文件，删除[ProxyList]后面的内容，然后添加:
+socks5  127.0.0.1 端口
+把“端口”替换为SSH代理设置的端口。
+
+使用:proxychains wget http://www.youtube.com -r
+即可给wget设置SSH代理去下载。
+
+proxychains是个代理链，可以设置多个代理，实现多级跳板连接。
